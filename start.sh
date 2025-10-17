@@ -12,6 +12,14 @@ if ! command -v ngrok &> /dev/null; then
     exit 1
 fi
 
+# Check if frontend dependencies are installed
+if [ ! -d "frontend/node_modules" ]; then
+    echo "📦 Installing frontend dependencies..."
+    cd frontend
+    npm install
+    cd ..
+fi
+
 # Activate virtual environment
 source .venv/bin/activate
 

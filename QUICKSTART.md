@@ -396,6 +396,24 @@ ollama list
 
 ---
 
+## Utility Scripts
+
+### Status Check
+```bash
+./status.sh       # Check which services are running
+```
+
+### Start Options
+```bash
+./start_dev.sh    # Full mode (Redis + Celery + all features)
+./start.sh        # Basic mode (legacy, no async)
+```
+
+### Verify Setup
+```bash
+./verify.sh       # Check dependencies and file structure
+```
+
 ## Quick Reference
 
 ### URLs

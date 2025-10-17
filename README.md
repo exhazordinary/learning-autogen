@@ -108,9 +108,25 @@ ollama pull llama3.2
 
 ## Quick Start
 
-### Web Interface (Recommended)
+### Option 1: Full Development Mode (Recommended)
 
-Start the full stack application with one command:
+Start all services including Redis and Celery:
+
+```bash
+./start_dev.sh
+```
+
+This starts:
+- Redis server (if not running)
+- Flask API backend on port 5001
+- Celery worker for async tasks
+- React frontend on port 3000
+
+Then open **http://localhost:3000** in your browser.
+
+### Option 2: Basic Mode (Legacy)
+
+Start without async features:
 
 ```bash
 ./start.sh
@@ -121,19 +137,28 @@ This starts:
 - React frontend on port 3000
 - ngrok tunnel for public access
 
-Then open **http://localhost:3000** in your browser.
+**Note:** Some features require Redis/Celery and won't work in basic mode.
 
-**Manual Start:**
+### Option 3: Docker (Production)
 
 ```bash
-# Terminal 1: Backend
+docker-compose up -d
+```
+
+### Manual Start
+
+```bash
+# Terminal 1: Redis
+redis-server
+
+# Terminal 2: Backend
 python app.py
 
-# Terminal 2: Frontend
-cd frontend && npm run dev
+# Terminal 3: Celery Worker
+celery -A src.autogen_research.tasks.celery_app worker --loglevel=info
 
-# Terminal 3: ngrok (optional)
-ngrok http 5001
+# Terminal 4: Frontend
+cd frontend && npm run dev
 ```
 
 ### Python API Usage
