@@ -34,4 +34,4 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
 # Run application with gunicorn
-CMD ["gunicorn", "--worker-class", "eventlet", "-w", "4", "--bind", "0.0.0.0:5001", "--timeout", "300", "app_v2:app"]
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "4", "--bind", "0.0.0.0:5001", "--timeout", "300", "app:app"]

@@ -71,12 +71,10 @@ Complete rewrite of the application with enterprise-grade features, scalability,
 - **Test Fixtures** - Reusable test data and mocks
 
 #### Documentation
-- **README_V2.md** - Complete user guide (370 lines)
-- **ARCHITECTURE.md** - System architecture (450+ lines)
-- **MIGRATION_GUIDE.md** - v1 to v2 migration guide (400+ lines)
-- **IMPROVEMENTS_SUMMARY.md** - Feature comparison
+- **README.md** - Complete user guide
+- **ARCHITECTURE.md** - System architecture documentation
 - **QUICKSTART.md** - 5-minute setup guide
-- **CHANGELOG.md** - This file
+- **CHANGELOG.md** - Version history
 - **API Documentation** - Interactive Swagger UI
 
 #### Dependencies
@@ -141,8 +139,7 @@ Complete rewrite of the application with enterprise-grade features, scalability,
 - **Gzip compression** - Reduce network transfer
 
 ### Deprecated
-- `app.py` - Use `app_v2.py` instead
-- Synchronous API endpoint - Use async endpoint
+- Synchronous API endpoint - Now uses async endpoint
 - Direct Ollama calls - Now proxied through task queue
 
 ### Removed
@@ -182,15 +179,13 @@ We use [Semantic Versioning](https://semver.org/):
 
 ### From v1.0 to v2.0
 
-See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed upgrade instructions.
-
-**Quick steps:**
+**Key Changes:**
 1. Install Redis
 2. Update dependencies (`uv sync`, `npm install`)
 3. Copy and configure `.env.example` to `.env`
 4. Initialize database
-5. Update frontend files
-6. Start new services (Redis, Celery worker)
+5. Start new services (Redis, Celery worker)
+6. API now uses async task queue (HTTP 202 responses)
 
 ---
 
@@ -215,8 +210,9 @@ See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed upgrade instructions
 ## Links
 
 - [Repository](https://github.com/yourusername/learning-autogen)
-- [Documentation](./README_V2.md)
+- [Documentation](./README.md)
 - [Architecture](./ARCHITECTURE.md)
+- [Quick Start](./QUICKSTART.md)
 - [API Docs](http://localhost:5001/api/docs)
 - [Issues](https://github.com/yourusername/learning-autogen/issues)
 

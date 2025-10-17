@@ -51,7 +51,7 @@ sleep 10
 
 echo "🔄 Running database migrations..."
 $DOCKER_COMPOSE run --rm backend python -c "
-from app_v2 import app, db
+from app import app, db
 with app.app_context():
     db.create_all()
     print('Database tables created successfully!')

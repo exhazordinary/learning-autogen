@@ -8,7 +8,7 @@ import sys
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app_v2 import app, db
+from app import app, db
 from src.autogen_research.database import ResearchTask, AgentMessage, TaskMetrics
 
 

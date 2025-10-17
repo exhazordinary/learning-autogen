@@ -110,8 +110,8 @@ The AutoGen Research Assistant is a production-grade, scalable multi-agent AI re
 ```
 frontend/
 ├── src/
-│   ├── App_v2.jsx        # Main application component
-│   ├── App_v2.css        # Styles with theme support
+│   ├── App.jsx           # Main application component
+│   ├── App.css           # Styles with theme support
 │   ├── store.js          # Zustand state management
 │   └── main.jsx          # Entry point
 ├── package.json

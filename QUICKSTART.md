@@ -97,7 +97,7 @@ Open 4 terminals and run:
 
 **Terminal 1 - Backend:**
 ```bash
-python app_v2.py
+python app.py
 ```
 
 **Terminal 2 - Celery Worker:**
@@ -364,9 +364,8 @@ ollama list
 ## Next Steps
 
 1. ✅ **Read the full documentation:**
-   - [README_V2.md](./README_V2.md) - Complete guide
+   - [README.md](./README.md) - Complete guide
    - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture
-   - [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) - If upgrading from v1.0
 
 2. ✅ **Explore API documentation:**
    - http://localhost:5001/api/docs
@@ -391,7 +390,7 @@ ollama list
 
 ## Getting Help
 
-- 📖 **Documentation:** See README_V2.md and ARCHITECTURE.md
+- 📖 **Documentation:** See README.md and ARCHITECTURE.md
 - 🐛 **Issues:** https://github.com/yourusername/learning-autogen/issues
 - 💬 **Discussions:** https://github.com/yourusername/learning-autogen/discussions
 
@@ -412,8 +411,8 @@ ollama list
 - 5432: PostgreSQL (if using)
 
 ### Key Files
-- `app_v2.py` - Main backend
-- `frontend/src/App_v2.jsx` - Main frontend
+- `app.py` - Main backend
+- `frontend/src/App.jsx` - Main frontend
 - `.env` - Configuration
 - `docker-compose.yml` - Docker setup
 
