@@ -47,6 +47,11 @@ uv.lock
 *.db
 *.sqlite
 *.log
+logs/
+research.db
+
+# SSL certificates
+ssl/
 
 # Jupyter Notebook
 .ipynb_checkpoints

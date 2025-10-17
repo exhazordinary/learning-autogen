@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # Redis for caching and Celery broker
+  redis:
+    image: redis:7-alpine
+    container_name: autogen-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # PostgreSQL database (optional, can use SQLite)
+  postgres:
+    image: postgres:16-alpine
+    container_name: autogen-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-autogen_research}
+      POSTGRES_USER: ${POSTGRES_USER:-autogen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autogen_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-autogen}"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Flask API backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autogen-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://autogen:autogen_password@postgres:5432/autogen_research}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - MODEL_TYPE=${MODEL_TYPE:-ollama}
+      - MODEL_NAME=${MODEL_NAME:-llama3.2}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - MAX_ROUNDS=${MAX_ROUNDS:-12}
+    volumes:
+      - ./logs:/app/logs
+      - ./src:/app/src
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Celery worker
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autogen-celery-worker
+    command: celery -A src.autogen_research.tasks.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://autogen:autogen_password@postgres:5432/autogen_research}
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - MODEL_TYPE=${MODEL_TYPE:-ollama}
+      - MODEL_NAME=${MODEL_NAME:-llama3.2}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      - TEMPERATURE=${TEMPERATURE:-0.7}
+      - MAX_ROUNDS=${MAX_ROUNDS:-12}
+    volumes:
+      - ./logs:/app/logs
+      - ./src:/app/src
+    depends_on:
+      - redis
+      - postgres
+      - backend
+    restart: unless-stopped
+
+  # React frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: autogen-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:5001}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Nginx reverse proxy (production)
+  nginx:
+    image: nginx:alpine
+    container_name: autogen-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-prod.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    restart: unless-stopped
+    profiles:
+      - production
+
+volumes:
+  redis-data:
+  postgres-data:
+
+networks:
+  default:
+    name: autogen-network

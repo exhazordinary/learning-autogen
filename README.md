@@ -1,48 +1,61 @@
 # AutoGen Research Assistant
 
-A production-grade multi-agent AI research system built with AutoGen, featuring specialized agents for comprehensive research, analysis, and documentation tasks.
+> A production-grade, scalable multi-agent AI research system built with AutoGen, featuring real-time updates, persistent storage, and modern web technologies.
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![React 19](https://img.shields.io/badge/react-19-blue.svg)](https://reactjs.org/)
+[![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)](https://www.docker.com/)
 
-- 🤖 **Multi-Agent Architecture**: Coordinated team of specialized AI agents
-  - Research Agent: Information gathering and synthesis
-  - Analysis Agent: Data analysis and pattern recognition
-  - Writer Agent: Content creation and documentation
-  - Critic Agent: Quality assurance and review
+## ✨ Features
 
-- 🌐 **Web Interface**: Modern React frontend with Flask REST API
-- 🔗 **Public Access**: ngrok integration for sharing your research assistant
-- 📊 **Built-in Metrics**: Track performance, token usage, and success rates
-- 🔧 **Flexible Configuration**: Environment-based configuration management
-- 📝 **Comprehensive Logging**: Colored console output and file logging
-- 🎯 **Production-Ready**: Error handling, type hints, and proper structure
+### Multi-Agent System
+- 🤖 **4 Specialized Agents**: Researcher, Analyst, Writer, Critic
+- 🔄 **Coordinated Workflow**: Sequential communication with quality checks
+- 🎯 **Intelligent Termination**: Critic determines task completion
+
+### Web Interface
+- 🌐 **Modern React UI**: Built with Vite for fast development
+- 🌓 **Dark/Light Theme**: Persistent theme preference
+- 📝 **Markdown Support**: Rich text rendering with syntax highlighting
+- 📊 **Real-time Progress**: WebSocket updates during processing
+- 📂 **Research History**: Automatic saving with quick access
+- 💾 **Export Functionality**: Download results as Markdown
+
+### Backend API
+- ⚡ **High Performance**: Async task processing with Celery
+- 🔒 **Secure**: Rate limiting, CORS, input validation
+- 📚 **Well Documented**: Interactive Swagger UI
+- 💾 **Persistent**: PostgreSQL/SQLite database
+- 🚀 **Scalable**: Horizontal and vertical scaling support
+
+### DevOps
+- 🐳 **Docker Ready**: Complete containerization
+- 🔄 **CI/CD**: Automated testing and deployment
+- 📊 **Monitoring**: Health checks and logging
+- 🔧 **Configurable**: Environment-based configuration
 
 ## Project Structure
 
 ```
 learning-autogen/
-├── src/
-│   └── autogen_research/
-│       ├── agents/          # Agent implementations
-│       ├── models/          # Model factory and management
-│       ├── teams/           # Team orchestration
-│       ├── utils/           # Logging, metrics, utilities
-│       └── config.py        # Configuration management
-├── frontend/                # React web interface
-│   ├── src/
-│   │   ├── App.jsx         # Main React component
-│   │   └── App.css         # Styles
-│   └── vite.config.js      # Vite configuration
-├── examples/
-│   ├── basic_research.py    # Simple research example
-│   └── advanced_research.py # Advanced multi-task pipeline
-├── tests/                   # Unit tests
-├── app.py                   # Flask REST API server
-├── start.sh                 # Start script (Flask + React + ngrok)
-├── .env.example            # Environment configuration template
-├── logs/                    # Log files and metrics
-├── pyproject.toml          # Project dependencies
-└── README.md               # This file
+├── src/autogen_research/
+│   ├── agents/          # Agent implementations
+│   ├── models/          # Model factory
+│   ├── teams/           # Team orchestration
+│   ├── database/        # Database models & cache
+│   ├── tasks/           # Celery async tasks
+│   └── utils/           # Logging, metrics
+├── frontend/            # React application
+│   └── src/
+│       ├── App.jsx      # Main component
+│       ├── App.css      # Styles
+│       └── store.js     # State management
+├── tests/               # Test suite
+├── static/              # API documentation
+├── app.py              # Flask API server
+├── docker-compose.yml  # Docker configuration
+└── start_production.sh # Production deployment
 ```
 
 ## Installation

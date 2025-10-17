@@ -1,27 +1,100 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { io } from 'socket.io-client'
+import ReactMarkdown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { formatDistanceToNow } from 'date-fns'
+import useStore from './store'
 import './App.css'
 
 function App() {
-  const [task, setTask] = useState('')
+  const [taskInput, setTaskInput] = useState('')
   const [messages, setMessages] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [metrics, setMetrics] = useState(null)
+  const [taskId, setTaskId] = useState(null)
+  const [taskStatus, setTaskStatus] = useState(null)
+  const [progress, setProgress] = useState(null)
+  const [history, setHistory] = useState([])
+
+  const {
+    theme,
+    setTheme,
+    loading,
+    setLoading,
+    error,
+    setError,
+    clearError,
+    socket,
+    setSocket,
+    connected,
+    setConnected
+  } = useStore()
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001'
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const newSocket = io(API_URL)
+
+    newSocket.on('connect', () => {
+      console.log('Connected to server')
+      setConnected(true)
+    })
+
+    newSocket.on('disconnect', () => {
+      console.log('Disconnected from server')
+      setConnected(false)
+    })
+
+    newSocket.on('task_update', (data) => {
+      console.log('Task update:', data)
+      if (data.task_id === taskId) {
+        setProgress(data.progress)
+        setTaskStatus(data.status)
+      }
+    })
+
+    setSocket(newSocket)
+
+    return () => {
+      newSocket.close()
+    }
+  }, [API_URL])
+
+  // Load history from localStorage
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('researchHistory')
+    if (savedHistory) {
+      setHistory(JSON.parse(savedHistory))
+    }
+  }, [])
+
+  // Save history to localStorage
+  useEffect(() => {
+    localStorage.setItem('researchHistory', JSON.stringify(history))
+  }, [history])
+
+  // Apply theme
+  useEffect(() => {
+    document.body.className = theme
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!task.trim()) {
+    if (!taskInput.trim()) {
       setError('Please enter a research task')
       return
     }
 
     setLoading(true)
-    setError(null)
+    clearError()
     setMessages([])
-    setMetrics(null)
+    setTaskStatus('pending')
+    setProgress(null)
 
     try {
       const response = await fetch(`${API_URL}/api/research`, {
@@ -29,102 +102,297 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ task }),
+        body: JSON.stringify({ task: taskInput }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to complete research')
+        throw new Error(data.error || 'Failed to start research')
       }
 
-      setMessages(data.messages || [])
-      setMetrics(data.metrics || null)
+      const newTaskId = data.task_id
+      setTaskId(newTaskId)
+      setTaskStatus('queued')
+
+      // Subscribe to task updates
+      if (socket && connected) {
+        socket.emit('subscribe_task', { task_id: newTaskId })
+      }
+
+      // Poll for task completion
+      pollTaskStatus(newTaskId)
+
     } catch (err) {
       setError(err.message)
-    } finally {
       setLoading(false)
     }
   }
 
+  const pollTaskStatus = async (id) => {
+    const maxAttempts = 120 // 10 minutes with 5s intervals
+    let attempts = 0
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/research/${id}/status`)
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch status')
+        }
+
+        setTaskStatus(data.status)
+
+        if (data.celery_status === 'PROCESSING' && data.meta) {
+          setProgress(data.meta)
+        }
+
+        if (data.status === 'completed') {
+          // Fetch full task details
+          const taskResponse = await fetch(`${API_URL}/api/research/${id}`)
+          const taskData = await taskResponse.json()
+
+          if (taskData.success) {
+            setMessages(taskData.task.messages || [])
+
+            // Add to history
+            const historyItem = {
+              id,
+              task: taskInput,
+              timestamp: new Date().toISOString(),
+              status: 'completed'
+            }
+            setHistory(prev => [historyItem, ...prev].slice(0, 20))
+          }
+
+          setLoading(false)
+          return
+        }
+
+        if (data.status === 'failed') {
+          setError(data.error || 'Task failed')
+          setLoading(false)
+          return
+        }
+
+        attempts++
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 5000) // Poll every 5 seconds
+        } else {
+          setError('Task timed out')
+          setLoading(false)
+        }
+
+      } catch (err) {
+        setError(err.message)
+        setLoading(false)
+      }
+    }
+
+    poll()
+  }
+
+  const loadHistoryItem = async (id) => {
+    try {
+      const response = await fetch(`${API_URL}/api/research/${id}`)
+      const data = await response.json()
+
+      if (data.success) {
+        setMessages(data.task.messages || [])
+        setTaskInput(data.task.task)
+        setTaskId(id)
+        setTaskStatus('completed')
+      }
+    } catch (err) {
+      setError('Failed to load history item')
+    }
+  }
+
+  const exportToMarkdown = async () => {
+    if (!taskId) return
+
+    try {
+      const response = await fetch(`${API_URL}/api/research/${taskId}/export`)
+      const data = await response.json()
+
+      if (data.success) {
+        const blob = new Blob([data.markdown], { type: 'text/markdown' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `research_${taskId}.md`
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch (err) {
+      setError('Failed to export')
+    }
+  }
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+      .then(() => alert('Copied to clipboard!'))
+      .catch(() => setError('Failed to copy'))
+  }
+
   return (
-    <div className="app">
+    <div className={`app ${theme}`}>
       <header className="header">
-        <h1>🤖 AutoGen Research Assistant</h1>
-        <p>Multi-agent AI research system powered by AutoGen</p>
+        <div className="header-content">
+          <div>
+            <h1>🤖 AutoGen Research Assistant</h1>
+            <p>Multi-agent AI research system powered by AutoGen</p>
+          </div>
+          <div className="header-actions">
+            <button onClick={toggleTheme} className="theme-toggle" title="Toggle theme">
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+            {connected ? (
+              <span className="connection-status connected">● Connected</span>
+            ) : (
+              <span className="connection-status disconnected">● Disconnected</span>
+            )}
+          </div>
+        </div>
       </header>
 
-      <main className="main">
-        <form onSubmit={handleSubmit} className="research-form">
-          <div className="form-group">
-            <label htmlFor="task">Research Task</label>
-            <textarea
-              id="task"
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              placeholder="Enter your research question or task here..."
-              rows={4}
-              disabled={loading}
-            />
-          </div>
-          <button type="submit" disabled={loading} className="submit-btn">
-            {loading ? '🔄 Researching...' : '🚀 Start Research'}
-          </button>
-        </form>
-
-        {error && (
-          <div className="error-box">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
-
-        {loading && (
-          <div className="loading-box">
-            <div className="spinner"></div>
-            <p>AI agents are working on your research task...</p>
-          </div>
-        )}
-
-        {messages.length > 0 && (
-          <div className="results">
-            <h2>Research Results</h2>
-            <div className="messages">
-              {messages.map((msg, idx) => (
-                <div key={idx} className={`message message-${msg.agent.toLowerCase()}`}>
-                  <div className="message-header">
-                    <strong>{msg.agent}</strong>
-                  </div>
-                  <div className="message-content">
-                    {msg.content}
+      <div className="layout">
+        <aside className="sidebar">
+          <h3>Research History</h3>
+          {history.length === 0 ? (
+            <p className="empty-history">No history yet</p>
+          ) : (
+            <div className="history-list">
+              {history.map((item) => (
+                <div
+                  key={item.id}
+                  className="history-item"
+                  onClick={() => loadHistoryItem(item.id)}
+                >
+                  <div className="history-task">{item.task.slice(0, 50)}...</div>
+                  <div className="history-time">
+                    {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+          {history.length > 0 && (
+            <button
+              onClick={() => setHistory([])}
+              className="clear-history-btn"
+            >
+              Clear History
+            </button>
+          )}
+        </aside>
 
-        {metrics && (
-          <div className="metrics">
-            <h3>Performance Metrics</h3>
-            <div className="metrics-grid">
-              <div className="metric-card">
-                <span className="metric-label">Total Tasks</span>
-                <span className="metric-value">{metrics.total_tasks || 0}</span>
+        <main className="main">
+          <form onSubmit={handleSubmit} className="research-form">
+            <div className="form-group">
+              <label htmlFor="task">Research Task</label>
+              <textarea
+                id="task"
+                value={taskInput}
+                onChange={(e) => setTaskInput(e.target.value)}
+                placeholder="Enter your research question or task here..."
+                rows={4}
+                disabled={loading}
+              />
+            </div>
+            <button type="submit" disabled={loading} className="submit-btn">
+              {loading ? '🔄 Researching...' : '🚀 Start Research'}
+            </button>
+          </form>
+
+          {error && (
+            <div className="error-box">
+              <strong>Error:</strong> {error}
+              <button onClick={clearError} className="close-btn">×</button>
+            </div>
+          )}
+
+          {loading && (
+            <div className="loading-box">
+              <div className="spinner"></div>
+              <p>
+                {progress ? progress.status : 'AI agents are working on your research task...'}
+              </p>
+              {progress && progress.progress && (
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${progress.progress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {messages.length > 0 && (
+            <div className="results">
+              <div className="results-header">
+                <h2>Research Results</h2>
+                <div className="results-actions">
+                  <button onClick={exportToMarkdown} className="action-btn">
+                    📥 Export
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(
+                      messages.map(m => `${m.agent}:\n${m.content}`).join('\n\n')
+                    )}
+                    className="action-btn"
+                  >
+                    📋 Copy
+                  </button>
+                </div>
               </div>
-              <div className="metric-card">
-                <span className="metric-label">Successful</span>
-                <span className="metric-value">{metrics.successful_tasks || 0}</span>
-              </div>
-              <div className="metric-card">
-                <span className="metric-label">Avg Duration</span>
-                <span className="metric-value">
-                  {metrics.average_duration ? `${metrics.average_duration.toFixed(2)}s` : 'N/A'}
-                </span>
+              <div className="messages">
+                {messages.map((msg, idx) => (
+                  <div key={idx} className={`message message-${msg.agent.toLowerCase()}`}>
+                    <div className="message-header">
+                      <strong>{msg.agent}</strong>
+                      <button
+                        onClick={() => copyToClipboard(msg.content)}
+                        className="copy-message-btn"
+                        title="Copy message"
+                      >
+                        📋
+                      </button>
+                    </div>
+                    <div className="message-content">
+                      <ReactMarkdown
+                        components={{
+                          code({ node, inline, className, children, ...props }) {
+                            const match = /language-(\w+)/.exec(className || '')
+                            return !inline && match ? (
+                              <SyntaxHighlighter
+                                style={theme === 'dark' ? vscDarkPlus : vs}
+                                language={match[1]}
+                                PreTag="div"
+                                {...props}
+                              >
+                                {String(children).replace(/\n$/, '')}
+                              </SyntaxHighlighter>
+                            ) : (
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            )
+                          }
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </main>
+      </div>
     </div>
   )
 }
