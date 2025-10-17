@@ -10,6 +10,8 @@ A production-grade multi-agent AI research system built with AutoGen, featuring 
   - Writer Agent: Content creation and documentation
   - Critic Agent: Quality assurance and review
 
+- 🌐 **Web Interface**: Modern React frontend with Flask REST API
+- 🔗 **Public Access**: ngrok integration for sharing your research assistant
 - 📊 **Built-in Metrics**: Track performance, token usage, and success rates
 - 🔧 **Flexible Configuration**: Environment-based configuration management
 - 📝 **Comprehensive Logging**: Colored console output and file logging
@@ -26,12 +28,18 @@ learning-autogen/
 │       ├── teams/           # Team orchestration
 │       ├── utils/           # Logging, metrics, utilities
 │       └── config.py        # Configuration management
+├── frontend/                # React web interface
+│   ├── src/
+│   │   ├── App.jsx         # Main React component
+│   │   └── App.css         # Styles
+│   └── vite.config.js      # Vite configuration
 ├── examples/
 │   ├── basic_research.py    # Simple research example
 │   └── advanced_research.py # Advanced multi-task pipeline
 ├── tests/                   # Unit tests
-├── config/
-│   └── .env.example        # Environment configuration template
+├── app.py                   # Flask REST API server
+├── start.sh                 # Start script (Flask + React + ngrok)
+├── .env.example            # Environment configuration template
 ├── logs/                    # Log files and metrics
 ├── pyproject.toml          # Project dependencies
 └── README.md               # This file
@@ -43,6 +51,8 @@ learning-autogen/
 
 - Python 3.10+
 - [uv](https://github.com/astral-sh/uv) package manager
+- Node.js 18+ and npm (for React frontend)
+- [ngrok](https://ngrok.com/) (for public access)
 - Ollama (if using local models)
 
 ### Setup
@@ -53,25 +63,67 @@ git clone <this repo url>
 cd learning-autogen
 ```
 
-2. Install dependencies:
+2. Install Python dependencies:
 ```bash
 uv sync
 ```
 
-3. Configure environment (optional):
+3. Install frontend dependencies:
 ```bash
-cp config/.env.example .env
+cd frontend
+npm install
+cd ..
+```
+
+4. Install ngrok:
+```bash
+brew install ngrok
+# or download from https://ngrok.com/
+```
+
+5. Configure environment (optional):
+```bash
+cp .env.example .env
 # Edit .env with your settings
 ```
 
-4. If using Ollama, pull the model:
+6. If using Ollama, start it and pull the model:
 ```bash
+ollama serve
 ollama pull llama3.2
 ```
 
 ## Quick Start
 
-### Basic Usage
+### Web Interface (Recommended)
+
+Start the full stack application with one command:
+
+```bash
+./start.sh
+```
+
+This starts:
+- Flask API backend on port 5001
+- React frontend on port 3000
+- ngrok tunnel for public access
+
+Then open **http://localhost:3000** in your browser.
+
+**Manual Start:**
+
+```bash
+# Terminal 1: Backend
+python app.py
+
+# Terminal 2: Frontend
+cd frontend && npm run dev
+
+# Terminal 3: ngrok (optional)
+ngrok http 5001
+```
+
+### Python API Usage
 
 ```python
 from src.autogen_research.teams import ResearchTeam
@@ -298,12 +350,81 @@ uv sync
 uv run python -c "import sys; print(sys.path)"
 ```
 
+## REST API
+
+### Endpoints
+
+**POST /api/research**
+Execute a research task with the agent team.
+
+Request:
+```json
+{
+  "task": "Your research question here"
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "messages": [
+    {"agent": "Researcher", "content": "..."},
+    {"agent": "Analyst", "content": "..."}
+  ],
+  "metrics": {
+    "total_tasks": 1,
+    "successful_tasks": 1,
+    "average_duration": 15.3
+  }
+}
+```
+
+**GET /api/health**
+Health check endpoint.
+
+**GET /api/config**
+Get current configuration.
+
 ## Performance Tips
 
-1. **Use appropriate temperature**: Lower (0.1-0.3) for factual tasks, higher (0.7-0.9) for creative tasks
-2. **Adjust max_rounds**: Balance between thoroughness and speed
-3. **Monitor metrics**: Use built-in metrics to track performance
-4. **Choose right model**: Larger models are more capable but slower
+### Speed Optimization
+
+The multi-agent system can take **30-120 seconds** depending on complexity. To make it faster:
+
+1. **Reduce max rounds** (in `app.py` or via environment):
+   ```python
+   team: TeamConfig(max_rounds=6)  # Default is 12
+   ```
+
+2. **Use smaller/faster models**:
+   ```bash
+   MODEL_NAME=llama3.2:1b  # Smaller, faster variant
+   ```
+
+3. **Switch to OpenAI** (faster but costs money):
+   ```bash
+   MODEL_TYPE=openai
+   MODEL_NAME=gpt-4o-mini  # Fast and affordable
+   OPENAI_API_KEY=your-key
+   ```
+
+4. **Use appropriate temperature**: Lower (0.1-0.3) for factual tasks, higher (0.7-0.9) for creative tasks
+
+5. **Write specific tasks**: Shorter, focused questions finish faster
+
+### Typical Response Times
+
+- **Ollama (local llama3.2)**: 30-120 seconds
+- **Ollama (llama3.2:1b)**: 15-60 seconds
+- **OpenAI GPT-4**: 10-30 seconds
+- **OpenAI GPT-4o-mini**: 5-15 seconds
+
+### Resource Usage
+
+- **CPU**: High during local model inference
+- **RAM**: 8GB+ recommended for llama3.2
+- **GPU**: Optional but significantly speeds up Ollama
 
 ## License
 
