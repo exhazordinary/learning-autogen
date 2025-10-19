@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 from functools import wraps
 
 import redis
@@ -91,7 +92,7 @@ class CacheManager:
 
 
 # Global cache manager instance
-cache_manager = CacheManager()
+cache_manager = CacheManager(redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"))
 
 
 def cached_research(ttl: int | None = None):
