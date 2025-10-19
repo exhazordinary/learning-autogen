@@ -9,8 +9,12 @@ COPY frontend/package*.json ./
 # Install dependencies
 RUN npm ci
 
-# Copy source code
-COPY frontend/ ./
+# Copy source code (excluding node_modules)
+COPY frontend/src ./src
+COPY frontend/public ./public
+COPY frontend/index.html ./
+COPY frontend/vite.config.js ./
+COPY frontend/eslint.config.js ./
 
 # Build application
 RUN npm run build
