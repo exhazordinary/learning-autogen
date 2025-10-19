@@ -28,7 +28,9 @@ export default defineConfig({
         manualChunks: {
           // Split vendor chunks for better caching
           'react-vendor': ['react', 'react-dom'],
-          'markdown-vendor': ['react-markdown', 'remark-gfm'],
+          'markdown-vendor': ['react-markdown'],
+          'socket-vendor': ['socket.io-client'],
+          'state-vendor': ['zustand'],
         },
       },
     },
