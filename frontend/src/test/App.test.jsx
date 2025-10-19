@@ -14,7 +14,7 @@ vi.mock('socket.io-client', () => ({
 }))
 
 // Mock fetch
-global.fetch = vi.fn()
+globalThis.fetch = vi.fn()
 
 describe('App Component', () => {
   beforeEach(() => {
