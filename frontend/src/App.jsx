@@ -45,20 +45,45 @@ function App() {
       setConnected(false)
     })
 
-    newSocket.on('task_update', (data) => {
-      console.log('Task update:', data)
-      if (data.task_id === taskId) {
-        setProgress(data.progress)
-        setTaskStatus(data.status)
-      }
-    })
-
     setSocket(newSocket)
 
     return () => {
       newSocket.close()
     }
   }, [API_URL])
+
+  // Set up message listeners when taskId changes
+  useEffect(() => {
+    if (!socket || !taskId) return
+
+    const handleTaskUpdate = (data) => {
+      console.log('Task update:', data)
+      if (data.task_id === taskId) {
+        setProgress(data.progress)
+        setTaskStatus(data.status)
+      }
+    }
+
+    const handleAgentMessage = (data) => {
+      console.log('Agent message received:', data)
+      if (data.task_id === taskId) {
+        // Append new message in real-time
+        setMessages(prev => [...prev, {
+          agent: data.agent,
+          content: data.content,
+          order: data.order
+        }])
+      }
+    }
+
+    socket.on('task_update', handleTaskUpdate)
+    socket.on('agent_message', handleAgentMessage)
+
+    return () => {
+      socket.off('task_update', handleTaskUpdate)
+      socket.off('agent_message', handleAgentMessage)
+    }
+  }, [socket, taskId])
 
   // Load history from localStorage
   useEffect(() => {

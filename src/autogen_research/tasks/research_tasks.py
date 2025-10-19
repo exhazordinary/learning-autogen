@@ -28,6 +28,22 @@ def emit_progress(task_id: int, status: str, progress: int) -> None:
         pass
 
 
+def emit_message(task_id: int, agent: str, content: str, order: int) -> None:
+    """Emit individual agent message via WebSocket."""
+    try:
+        from app import socketio
+
+        socketio.emit(
+            "agent_message",
+            {"task_id": task_id, "agent": agent, "content": content, "order": order},
+            namespace="/",
+            room=f"task_{task_id}",
+        )
+    except Exception:
+        # Silently fail if socketio not available
+        pass
+
+
 @celery_app.task(bind=True, name="research.process_task")
 def process_research_task(self, task_id: int, task_text: str, config_dict: dict = None):
     """
@@ -87,9 +103,40 @@ def process_research_task(self, task_id: int, task_text: str, config_dict: dict 
             )
             emit_progress(task_id, "Research agents working...", 30)
 
-            # Run research
+            # Run research with streaming
             start_time = datetime.now(timezone.utc)
-            messages = team.run(task_text, verbose=False)
+
+            # Use async streaming to emit messages in real-time
+            import asyncio
+
+            async def stream_and_save_messages():
+                """Stream messages and emit them in real-time."""
+                stream = team.team.run_stream(task=task_text)
+                messages = []
+                idx = 0
+
+                async for message in stream:
+                    messages.append(message)
+
+                    # Emit and save each message as it arrives
+                    if hasattr(message, "source") and hasattr(message, "content"):
+                        # Save to database immediately
+                        agent_message = AgentMessage(
+                            task_id=task_id,
+                            agent=message.source,
+                            content=message.content,
+                            order=idx,
+                        )
+                        db.session.add(agent_message)
+                        db.session.commit()
+
+                        # Emit message to frontend in real-time
+                        emit_message(task_id, message.source, message.content, idx)
+                        idx += 1
+
+                return messages
+
+            messages = asyncio.run(stream_and_save_messages())
             end_time = datetime.now(timezone.utc)
             duration = (end_time - start_time).total_seconds()
 
@@ -98,14 +145,6 @@ def process_research_task(self, task_id: int, task_text: str, config_dict: dict 
                 state="PROCESSING", meta={"status": "Saving results...", "progress": 90}
             )
             emit_progress(task_id, "Saving results...", 90)
-
-            # Save messages
-            for idx, msg in enumerate(messages):
-                if hasattr(msg, "source") and hasattr(msg, "content"):
-                    agent_message = AgentMessage(
-                        task_id=task_id, agent=msg.source, content=msg.content, order=idx
-                    )
-                    db.session.add(agent_message)
 
             # Save metrics
             summary = team.get_summary()
