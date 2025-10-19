@@ -11,7 +11,6 @@ function App() {
   const [taskInput, setTaskInput] = useState('')
   const [messages, setMessages] = useState([])
   const [taskId, setTaskId] = useState(null)
-  const [taskStatus, setTaskStatus] = useState(null)
   const [progress, setProgress] = useState(null)
   const [history, setHistory] = useState([])
 
@@ -50,7 +49,7 @@ function App() {
     return () => {
       newSocket.close()
     }
-  }, [API_URL])
+  }, [API_URL, setConnected, setSocket])
 
   // Set up message listeners when taskId changes
   useEffect(() => {
@@ -60,7 +59,6 @@ function App() {
       console.log('Task update:', data)
       if (data.task_id === taskId) {
         setProgress(data.progress)
-        setTaskStatus(data.status)
       }
     }
 
@@ -118,7 +116,6 @@ function App() {
     setLoading(true)
     clearError()
     setMessages([])
-    setTaskStatus('pending')
     setProgress(null)
 
     try {
@@ -138,7 +135,6 @@ function App() {
 
       const newTaskId = data.task_id
       setTaskId(newTaskId)
-      setTaskStatus('queued')
 
       // Subscribe to task updates
       if (socket && connected) {
@@ -166,8 +162,6 @@ function App() {
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch status')
         }
-
-        setTaskStatus(data.status)
 
         if (data.celery_status === 'PROCESSING' && data.meta) {
           setProgress(data.meta)
@@ -227,9 +221,8 @@ function App() {
         setMessages(data.task.messages || [])
         setTaskInput(data.task.task)
         setTaskId(id)
-        setTaskStatus('completed')
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load history item')
     }
   }
@@ -250,7 +243,7 @@ function App() {
         a.click()
         URL.revokeObjectURL(url)
       }
-    } catch (err) {
+    } catch {
       setError('Failed to export')
     }
   }
@@ -389,7 +382,7 @@ function App() {
                     <div className="message-content">
                       <ReactMarkdown
                         components={{
-                          code({ node, inline, className, children, ...props }) {
+                          code({ inline, className, children, ...props }) {
                             const match = /language-(\w+)/.exec(className || '')
                             return !inline && match ? (
                               <SyntaxHighlighter
