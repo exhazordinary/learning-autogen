@@ -5,8 +5,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: autogen-redis
-    ports:
-      - "6379:6379"
+    # ports:
+    #   - "6379:6379"
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
@@ -24,8 +24,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-autogen_research}
       POSTGRES_USER: ${POSTGRES_USER:-autogen}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-autogen_password}
-    ports:
-      - "5432:5432"
+    # ports:
+    #   - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

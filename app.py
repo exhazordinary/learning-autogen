@@ -57,7 +57,7 @@ try:
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],
+        default_limits=["10000 per day", "1000 per hour"],
         storage_uri=redis_url,
     )
 except Exception as e:
@@ -65,7 +65,7 @@ except Exception as e:
     limiter = Limiter(
         app=app,
         key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],
+        default_limits=["10000 per day", "1000 per hour"],
         storage_uri="memory://",
     )
 
@@ -117,7 +117,7 @@ def internal_error(e):
 
 
 @app.route("/api/v1/research", methods=["POST"])
-@limiter.limit("10 per minute")
+@limiter.limit("100 per minute")
 def research_v1():
     """
     Execute a research task asynchronously.
@@ -234,7 +234,7 @@ def get_task_status_v1(task_id: int):
 
 
 @app.route("/api/v1/research", methods=["GET"])
-@limiter.limit("30 per minute")
+@limiter.limit("500 per minute")
 def list_research_tasks_v1():
     """List all research tasks with pagination."""
     try:
