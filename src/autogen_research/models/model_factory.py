@@ -1,7 +1,9 @@
 """Model factory for creating and managing AI model clients."""
 
-from typing import Dict, Optional, Literal
+from typing import Literal
+
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -53,7 +55,7 @@ class ModelFactory:
     @staticmethod
     def create_openai_client(
         model: str = "gpt-4",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         temperature: float = 0.7,
         **kwargs,
     ) -> OpenAIChatCompletionClient:
@@ -85,7 +87,7 @@ class ModelFactory:
     @staticmethod
     def create_client(
         model_type: ModelType = "ollama",
-        model: Optional[str] = None,
+        model: str | None = None,
         **kwargs,
     ) -> OpenAIChatCompletionClient:
         """
@@ -104,22 +106,17 @@ class ModelFactory:
         """
         if model_type == "ollama":
             default_model = "llama3.2"
-            return ModelFactory.create_ollama_client(
-                model=model or default_model, **kwargs
-            )
+            return ModelFactory.create_ollama_client(model=model or default_model, **kwargs)
         elif model_type == "openai":
             default_model = "gpt-4"
-            return ModelFactory.create_openai_client(
-                model=model or default_model, **kwargs
-            )
+            return ModelFactory.create_openai_client(model=model or default_model, **kwargs)
         else:
             raise ValueError(
-                f"Unsupported model type: {model_type}. "
-                f"Supported types: ollama, openai"
+                f"Unsupported model type: {model_type}. " f"Supported types: ollama, openai"
             )
 
     @staticmethod
-    def get_model_config(model_type: ModelType) -> Dict:
+    def get_model_config(model_type: ModelType) -> dict:
         """
         Get default configuration for a model type.
 

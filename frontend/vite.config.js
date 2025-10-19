@@ -13,4 +13,30 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Production optimizations
+    target: 'es2015',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor chunks for better caching
+          'react-vendor': ['react', 'react-dom'],
+          'markdown-vendor': ['react-markdown', 'remark-gfm'],
+        },
+      },
+    },
+    // Enable gzip compression hint
+    reportCompressedSize: true,
+    // Chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+  },
+  // Enable source maps for production debugging
+  sourcemap: true,
 })

@@ -1,9 +1,9 @@
 """Configuration management for AutoGen Research."""
 
 import os
-from pathlib import Path
-from typing import Optional, Literal
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Literal
 
 
 @dataclass
@@ -11,10 +11,10 @@ class ModelConfig:
     """Configuration for AI models."""
 
     model_type: Literal["ollama", "openai"] = "ollama"
-    model_name: Optional[str] = None
+    model_name: str | None = None
     temperature: float = 0.7
-    base_url: Optional[str] = None
-    api_key: Optional[str] = None
+    base_url: str | None = None
+    api_key: str | None = None
 
     def __post_init__(self):
         """Set defaults based on model type."""
@@ -49,7 +49,7 @@ class TeamConfig:
 
     max_rounds: int = 12
     enable_round_robin: bool = True
-    timeout: Optional[int] = None  # seconds
+    timeout: int | None = None  # seconds
 
 
 @dataclass

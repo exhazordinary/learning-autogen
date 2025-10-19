@@ -1,9 +1,10 @@
 """Specialized agent implementations for research tasks."""
 
-from typing import Optional
+
 from autogen_ext.models.openai import OpenAIChatCompletionClient
-from .base_agent import BaseAgent
+
 from ..utils.metrics import MetricsCollector
+from .base_agent import BaseAgent
 
 
 class ResearchAgent(BaseAgent):
@@ -12,7 +13,7 @@ class ResearchAgent(BaseAgent):
     def __init__(
         self,
         model_client: OpenAIChatCompletionClient,
-        metrics_collector: Optional[MetricsCollector] = None,
+        metrics_collector: MetricsCollector | None = None,
         name: str = "Researcher",
     ):
         """Initialize research agent."""
@@ -47,7 +48,7 @@ class AnalysisAgent(BaseAgent):
     def __init__(
         self,
         model_client: OpenAIChatCompletionClient,
-        metrics_collector: Optional[MetricsCollector] = None,
+        metrics_collector: MetricsCollector | None = None,
         name: str = "Analyst",
     ):
         """Initialize analysis agent."""
@@ -82,7 +83,7 @@ class WriterAgent(BaseAgent):
     def __init__(
         self,
         model_client: OpenAIChatCompletionClient,
-        metrics_collector: Optional[MetricsCollector] = None,
+        metrics_collector: MetricsCollector | None = None,
         name: str = "Writer",
     ):
         """Initialize writer agent."""
@@ -117,7 +118,7 @@ class CriticAgent(BaseAgent):
     def __init__(
         self,
         model_client: OpenAIChatCompletionClient,
-        metrics_collector: Optional[MetricsCollector] = None,
+        metrics_collector: MetricsCollector | None = None,
         name: str = "Critic",
     ):
         """Initialize critic agent."""

@@ -4,15 +4,15 @@ Advanced research example with custom configuration and multiple tasks.
 This demonstrates more sophisticated usage of the research team.
 """
 
+import os
 import sys
 from pathlib import Path
-import os
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.autogen_research.teams import ResearchTeam
 from src.autogen_research.config import Config
+from src.autogen_research.teams import ResearchTeam
 from src.autogen_research.utils import setup_logger
 
 
@@ -27,7 +27,7 @@ def run_research_pipeline():
     print("\n" + "=" * 80)
     print("AUTOGEN RESEARCH ASSISTANT - Advanced Pipeline")
     print("=" * 80)
-    print(f"\nConfiguration:")
+    print("\nConfiguration:")
     print(f"  Model: {config.model.model_type} / {config.model.model_name}")
     print(f"  Temperature: {config.model.temperature}")
     print(f"  Max Rounds: {config.team.max_rounds}")
@@ -76,20 +76,24 @@ Keep it technical but clear.""",
 
         try:
             messages = team.run(task_info["task"], verbose=True)
-            results.append({
-                "title": task_info["title"],
-                "success": True,
-                "message_count": len(messages),
-            })
+            results.append(
+                {
+                    "title": task_info["title"],
+                    "success": True,
+                    "message_count": len(messages),
+                }
+            )
             logger.info(f"Task '{task_info['title']}' completed successfully")
 
         except Exception as e:
             logger.error(f"Task '{task_info['title']}' failed: {e}")
-            results.append({
-                "title": task_info["title"],
-                "success": False,
-                "error": str(e),
-            })
+            results.append(
+                {
+                    "title": task_info["title"],
+                    "success": False,
+                    "error": str(e),
+                }
+            )
 
         print("\n" + "=" * 80)
 

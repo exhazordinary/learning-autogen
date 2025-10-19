@@ -1,11 +1,11 @@
 """CLI entry point for AutoGen Research."""
 
-import sys
 import argparse
+import sys
 from pathlib import Path
 
-from .teams import ResearchTeam
 from .config import Config
+from .teams import ResearchTeam
 from .utils import setup_logger
 
 
@@ -71,7 +71,7 @@ def main():
     )
 
     # Create configuration
-    from .config import ModelConfig, LoggingConfig, TeamConfig
+    from .config import LoggingConfig, ModelConfig, TeamConfig
 
     config = Config(
         model=ModelConfig(
@@ -96,7 +96,7 @@ def main():
     team = ResearchTeam(config=config)
 
     try:
-        messages = team.run(args.task, verbose=not args.quiet)
+        _ = team.run(args.task, verbose=not args.quiet)
 
         if not args.quiet:
             print("\n" + "=" * 80)

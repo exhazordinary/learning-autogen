@@ -1,26 +1,27 @@
 """Celery application configuration."""
 
-from celery import Celery
 import os
 
+from celery import Celery
 
-def make_celery(app_name: str = 'autogen_research'):
+
+def make_celery(app_name: str = "autogen_research"):
     """Create and configure Celery application."""
-    broker_url = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/1')
-    result_backend = os.getenv('CELERY_RESULT_BACKEND', 'redis://localhost:6379/1')
+    broker_url = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/1")
+    result_backend = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
 
     celery = Celery(
         app_name,
         broker=broker_url,
         backend=result_backend,
-        include=['src.autogen_research.tasks.research_tasks']
+        include=["src.autogen_research.tasks.research_tasks"],
     )
 
     celery.conf.update(
-        task_serializer='json',
-        accept_content=['json'],
-        result_serializer='json',
-        timezone='UTC',
+        task_serializer="json",
+        accept_content=["json"],
+        result_serializer="json",
+        timezone="UTC",
         enable_utc=True,
         task_track_started=True,
         task_time_limit=600,  # 10 minutes

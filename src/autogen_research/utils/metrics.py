@@ -1,10 +1,9 @@
 """Metrics collection and monitoring for agent performance."""
 
+import json
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
 from datetime import datetime
-import json
 from pathlib import Path
 
 
@@ -15,12 +14,12 @@ class AgentMetrics:
     agent_name: str
     task: str
     start_time: float
-    end_time: Optional[float] = None
+    end_time: float | None = None
     success: bool = False
-    error: Optional[str] = None
+    error: str | None = None
     tokens_used: int = 0
     response_length: int = 0
-    metadata: Dict = field(default_factory=dict)
+    metadata: dict = field(default_factory=dict)
 
     @property
     def duration(self) -> float:
@@ -29,13 +28,15 @@ class AgentMetrics:
             return 0.0
         return self.end_time - self.start_time
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert metrics to dictionary."""
         return {
             "agent_name": self.agent_name,
             "task": self.task,
             "start_time": datetime.fromtimestamp(self.start_time).isoformat(),
-            "end_time": datetime.fromtimestamp(self.end_time).isoformat() if self.end_time else None,
+            "end_time": datetime.fromtimestamp(self.end_time).isoformat()
+            if self.end_time
+            else None,
             "duration": self.duration,
             "success": self.success,
             "error": self.error,
@@ -50,7 +51,7 @@ class MetricsCollector:
 
     def __init__(self):
         """Initialize metrics collector."""
-        self.metrics: List[AgentMetrics] = []
+        self.metrics: list[AgentMetrics] = []
         self.session_start = time.time()
 
     def start_task(self, agent_name: str, task: str) -> AgentMetrics:
@@ -67,10 +68,10 @@ class MetricsCollector:
         self,
         metric: AgentMetrics,
         success: bool = True,
-        error: Optional[str] = None,
+        error: str | None = None,
         tokens_used: int = 0,
         response_length: int = 0,
-        metadata: Optional[Dict] = None,
+        metadata: dict | None = None,
     ):
         """End tracking a task and record results."""
         metric.end_time = time.time()
@@ -81,7 +82,7 @@ class MetricsCollector:
         if metadata:
             metric.metadata.update(metadata)
 
-    def get_summary(self) -> Dict:
+    def get_summary(self) -> dict:
         """Get summary statistics of all metrics."""
         total_tasks = len(self.metrics)
         successful_tasks = sum(1 for m in self.metrics if m.success)

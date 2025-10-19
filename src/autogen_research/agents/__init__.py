@@ -2,10 +2,10 @@
 
 from .base_agent import BaseAgent
 from .specialized_agents import (
-    ResearchAgent,
     AnalysisAgent,
-    WriterAgent,
     CriticAgent,
+    ResearchAgent,
+    WriterAgent,
 )
 
 __all__ = [

@@ -2,19 +2,164 @@
   "openapi": "3.0.0",
   "info": {
     "title": "AutoGen Research API",
-    "description": "Multi-agent AI research system powered by AutoGen",
-    "version": "2.0.0",
+    "description": "Multi-agent AI research system powered by AutoGen with async task processing, WebSocket updates, and persistent storage",
+    "version": "3.0.0",
     "contact": {
       "name": "AutoGen Research Team"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
     }
   },
   "servers": [
     {
       "url": "http://localhost:5001",
       "description": "Development server"
+    },
+    {
+      "url": "https://api.production.example.com",
+      "description": "Production server"
     }
   ],
   "paths": {
+    "/api/v1/research": {
+      "post": {
+        "summary": "Create research task",
+        "description": "Submit a new research task for async processing",
+        "tags": ["Research"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "task": {
+                    "type": "string",
+                    "description": "Research question or task",
+                    "maxLength": 5000
+                  },
+                  "use_cache": {
+                    "type": "boolean",
+                    "description": "Whether to use cached results",
+                    "default": true
+                  }
+                },
+                "required": ["task"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Task queued successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "task_id": { "type": "integer" },
+                    "celery_task_id": { "type": "string" },
+                    "status": { "type": "string" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request"
+          }
+        }
+      },
+      "get": {
+        "summary": "List research tasks",
+        "description": "Get paginated list of research tasks",
+        "tags": ["Research"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 10 }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["pending", "processing", "completed", "failed"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tasks retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/research/{task_id}": {
+      "get": {
+        "summary": "Get research task",
+        "description": "Retrieve a specific research task by ID",
+        "tags": ["Research"],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Task found" },
+          "404": { "description": "Task not found" }
+        }
+      }
+    },
+    "/api/v1/research/{task_id}/status": {
+      "get": {
+        "summary": "Get task status",
+        "description": "Get current status and progress of a research task",
+        "tags": ["Research"],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Status retrieved" }
+        }
+      }
+    },
+    "/api/v1/research/{task_id}/export": {
+      "get": {
+        "summary": "Export research task",
+        "description": "Export research task results as Markdown",
+        "tags": ["Research"],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Export successful" }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "summary": "Health check",

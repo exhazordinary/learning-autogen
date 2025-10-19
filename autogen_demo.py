@@ -9,8 +9,9 @@ This demo showcases a customer support system with multiple specialized agents:
 """
 
 import asyncio
+
 from autogen_agentchat.agents import AssistantAgent
-from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
+from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 
@@ -99,6 +100,7 @@ customer_inquiries = [
     "What are the system requirements for running your software on Mac?",
 ]
 
+
 async def run_support_demo(inquiry_index=0):
     """Run a customer support simulation with the selected inquiry."""
     print(f"\n{'='*80}")
@@ -114,14 +116,15 @@ async def run_support_demo(inquiry_index=0):
 
     # Print messages as they arrive
     async for message in stream:
-        if hasattr(message, 'source'):
+        if hasattr(message, "source"):
             print(f"\n[{message.source}]:")
-        if hasattr(message, 'content'):
+        if hasattr(message, "content"):
             print(message.content)
 
     print(f"\n{'='*80}")
     print("Support session completed!")
     print(f"{'='*80}\n")
+
 
 async def main():
     """Main entry point."""
@@ -133,6 +136,7 @@ async def main():
     # for i in range(len(customer_inquiries)):
     #     await run_support_demo(inquiry_index=i)
     #     print("\n\n")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

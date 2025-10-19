@@ -1,13 +1,12 @@
 """Tests for configuration management."""
 
 import os
-import pytest
+import sys
 from pathlib import Path
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.autogen_research.config import Config, ModelConfig, LoggingConfig, TeamConfig
+from src.autogen_research.config import Config, LoggingConfig, ModelConfig, TeamConfig
 
 
 class TestModelConfig:

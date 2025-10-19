@@ -1,15 +1,14 @@
 """Tests for metrics collection."""
 
-import time
-import pytest
-from pathlib import Path
-import tempfile
 import json
-
 import sys
+import tempfile
+import time
+from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.autogen_research.utils.metrics import MetricsCollector, AgentMetrics
+from src.autogen_research.utils.metrics import AgentMetrics, MetricsCollector
 
 
 class TestAgentMetrics:

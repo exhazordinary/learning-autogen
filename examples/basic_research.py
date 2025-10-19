@@ -10,8 +10,8 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src.autogen_research.config import Config, LoggingConfig, ModelConfig
 from src.autogen_research.teams import ResearchTeam
-from src.autogen_research.config import Config, ModelConfig, LoggingConfig
 from src.autogen_research.utils import setup_logger
 
 
@@ -56,7 +56,7 @@ Keep the explanation concise and accessible."""
     print("=" * 80)
 
     # Execute research
-    messages = team.run(task, verbose=True)
+    _ = team.run(task, verbose=True)
 
     # Print summary
     print("\n" + "=" * 80)

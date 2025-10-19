@@ -50,6 +50,9 @@ uv.lock
 logs/
 research.db
 
+# Redis
+dump.rdb
+
 # SSL certificates
 ssl/
 

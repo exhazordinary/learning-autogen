@@ -1,15 +1,16 @@
 """Research team orchestration with multiple specialized agents."""
 
 import asyncio
-from typing import List, Optional
-from autogen_agentchat.teams import RoundRobinGroupChat
-from autogen_agentchat.conditions import TextMentionTermination, MaxMessageTermination
+from typing import Any
 
-from ..agents import ResearchAgent, AnalysisAgent, WriterAgent, CriticAgent
-from ..models import ModelFactory
-from ..utils.metrics import MetricsCollector
-from ..utils.logger import get_logger
+from autogen_agentchat.conditions import MaxMessageTermination, TextMentionTermination
+from autogen_agentchat.teams import RoundRobinGroupChat
+
+from ..agents import AnalysisAgent, CriticAgent, ResearchAgent, WriterAgent
 from ..config import Config
+from ..models import ModelFactory
+from ..utils.logger import get_logger
+from ..utils.metrics import MetricsCollector
 
 logger = get_logger(__name__)
 
@@ -27,8 +28,8 @@ class ResearchTeam:
 
     def __init__(
         self,
-        config: Optional[Config] = None,
-        metrics_collector: Optional[MetricsCollector] = None,
+        config: Config | None = None,
+        metrics_collector: MetricsCollector | None = None,
     ):
         """
         Initialize research team.
@@ -74,9 +75,8 @@ class ResearchTeam:
         )
 
         # Create termination conditions
-        termination = (
-            TextMentionTermination("TERMINATE")
-            | MaxMessageTermination(self.config.team.max_rounds)
+        termination = TextMentionTermination("TERMINATE") | MaxMessageTermination(
+            self.config.team.max_rounds
         )
 
         # Create team
@@ -92,7 +92,7 @@ class ResearchTeam:
 
         logger.info("Research Team initialized successfully")
 
-    async def research(self, task: str, verbose: bool = True) -> List[dict]:
+    async def research(self, task: str, verbose: bool = True) -> list[dict[str, Any]]:
         """
         Execute a research task with the team.
 
@@ -102,6 +102,9 @@ class ResearchTeam:
 
         Returns:
             List of messages from the conversation
+
+        Raises:
+            Exception: If the research task fails
         """
         logger.info(f"Starting research task: {task}")
 
@@ -114,7 +117,7 @@ class ResearchTeam:
             # Run the team
             stream = self.team.run_stream(task=task)
 
-            messages = []
+            messages: list[dict[str, Any]] = []
             async for message in stream:
                 messages.append(message)
 
@@ -134,11 +137,11 @@ class ResearchTeam:
             return messages
 
         except Exception as e:
-            logger.error(f"Research task failed: {e}")
+            logger.error(f"Research task failed: {e}", exc_info=True)
             self.metrics.end_task(metric, success=False, error=str(e))
             raise
 
-    def run(self, task: str, verbose: bool = True) -> List[dict]:
+    def run(self, task: str, verbose: bool = True) -> list[dict[str, Any]]:
         """
         Synchronous wrapper for research method.
 
@@ -151,15 +154,15 @@ class ResearchTeam:
         """
         return asyncio.run(self.research(task, verbose))
 
-    def get_summary(self) -> dict:
+    def get_summary(self) -> dict[str, Any]:
         """Get performance summary for the team."""
         return self.metrics.get_summary()
 
-    def print_summary(self):
+    def print_summary(self) -> None:
         """Print performance metrics summary."""
         self.metrics.print_summary()
 
-    def export_metrics(self, filepath: str):
+    def export_metrics(self, filepath: str) -> None:
         """Export metrics to a file."""
         from pathlib import Path
 

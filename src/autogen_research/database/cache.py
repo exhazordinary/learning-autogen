@@ -1,16 +1,16 @@
 """Redis cache manager for research results."""
 
-import json
 import hashlib
-from typing import Optional, Any
-import redis
+import json
 from functools import wraps
+
+import redis
 
 
 class CacheManager:
     """Manages caching of research results."""
 
-    def __init__(self, redis_url: str = 'redis://localhost:6379/0', ttl: int = 3600):
+    def __init__(self, redis_url: str = "redis://localhost:6379/0", ttl: int = 3600):
         """
         Initialize cache manager.
 
@@ -26,7 +26,7 @@ class CacheManager:
         task_hash = hashlib.sha256(task.encode()).hexdigest()
         return f"research:task:{task_hash}"
 
-    def get(self, task: str) -> Optional[dict]:
+    def get(self, task: str) -> dict | None:
         """
         Get cached result for a task.
 
@@ -58,11 +58,7 @@ class CacheManager:
         """
         try:
             key = self._generate_key(task)
-            self.redis_client.setex(
-                key,
-                self.ttl,
-                json.dumps(result)
-            )
+            self.redis_client.setex(key, self.ttl, json.dumps(result))
             return True
         except (redis.RedisError, json.JSONDecodeError):
             return False
@@ -98,13 +94,14 @@ class CacheManager:
 cache_manager = CacheManager()
 
 
-def cached_research(ttl: Optional[int] = None):
+def cached_research(ttl: int | None = None):
     """
     Decorator to cache research results.
 
     Args:
         ttl: Time to live in seconds (uses default if None)
     """
+
     def decorator(func):
         @wraps(func)
         def wrapper(task: str, *args, **kwargs):
@@ -126,5 +123,7 @@ def cached_research(ttl: Optional[int] = None):
                 cache_manager.set(task, result)
 
             return result
+
         return wrapper
+
     return decorator

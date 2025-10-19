@@ -1,8 +1,10 @@
 """Base agent class with enhanced functionality."""
 
-from typing import Optional, Dict, Any
+from typing import Any
+
 from autogen_agentchat.agents import AssistantAgent
 from autogen_ext.models.openai import OpenAIChatCompletionClient
+
 from ..utils.logger import get_logger
 from ..utils.metrics import MetricsCollector
 
@@ -23,8 +25,8 @@ class BaseAgent:
         description: str,
         system_message: str,
         model_client: OpenAIChatCompletionClient,
-        metrics_collector: Optional[MetricsCollector] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        metrics_collector: MetricsCollector | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize base agent.

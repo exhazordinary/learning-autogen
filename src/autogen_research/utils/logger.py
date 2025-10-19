@@ -3,8 +3,6 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
-from datetime import datetime
 
 
 class ColoredFormatter(logging.Formatter):
@@ -29,7 +27,7 @@ class ColoredFormatter(logging.Formatter):
 def setup_logger(
     name: str,
     level: int = logging.INFO,
-    log_file: Optional[Path] = None,
+    log_file: Path | None = None,
 ) -> logging.Logger:
     """
     Set up a logger with console and optional file output.
