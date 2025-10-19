@@ -111,13 +111,12 @@ def process_research_task(self, task_id: int, task_text: str, config_dict: dict 
 
             async def stream_and_save_messages():
                 """Stream messages and emit them in real-time."""
-                stream = team.team.run_stream(task=task_text)
-                messages = []
+                # Use the new v2.0 API - research() method returns (messages, stats)
+                messages, stats = await team.research(task=task_text)
                 idx = 0
 
-                async for message in stream:
-                    messages.append(message)
-
+                # Process all messages
+                for message in messages:
                     # Emit and save each message as it arrives
                     if hasattr(message, "source") and hasattr(message, "content"):
                         # Save to database immediately
@@ -134,9 +133,9 @@ def process_research_task(self, task_id: int, task_text: str, config_dict: dict 
                         emit_message(task_id, message.source, message.content, idx)
                         idx += 1
 
-                return messages
+                return messages, stats
 
-            messages = asyncio.run(stream_and_save_messages())
+            messages, stats = asyncio.run(stream_and_save_messages())
             end_time = datetime.now(timezone.utc)
             duration = (end_time - start_time).total_seconds()
 
@@ -146,14 +145,15 @@ def process_research_task(self, task_id: int, task_text: str, config_dict: dict 
             )
             emit_progress(task_id, "Saving results...", 90)
 
-            # Save metrics
-            summary = team.get_summary()
+            # Save metrics with v2.0 token stats
             task_metrics = TaskMetrics(
                 task_id=task_id,
                 duration=duration,
                 total_messages=len(messages),
-                token_usage=summary.get("token_usage"),
-                model_info=summary.get("model_info"),
+                input_tokens=stats.get("input_tokens", 0),
+                output_tokens=stats.get("output_tokens", 0),
+                total_tokens=stats.get("total_tokens", 0),
+                estimated_cost=stats.get("estimated_cost", 0.0),
             )
             db.session.add(task_metrics)
 
