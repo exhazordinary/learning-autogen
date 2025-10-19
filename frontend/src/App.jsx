@@ -97,7 +97,7 @@ function App() {
     setProgress(null)
 
     try {
-      const response = await fetch(`${API_URL}/api/research`, {
+      const response = await fetch(`${API_URL}/api/v1/research`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,7 +135,7 @@ function App() {
 
     const poll = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/research/${id}/status`)
+        const response = await fetch(`${API_URL}/api/v1/research/${id}/status`)
         const data = await response.json()
 
         if (!response.ok) {
@@ -150,7 +150,7 @@ function App() {
 
         if (data.status === 'completed') {
           // Fetch full task details
-          const taskResponse = await fetch(`${API_URL}/api/research/${id}`)
+          const taskResponse = await fetch(`${API_URL}/api/v1/research/${id}`)
           const taskData = await taskResponse.json()
 
           if (taskData.success) {
@@ -195,7 +195,7 @@ function App() {
 
   const loadHistoryItem = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/api/research/${id}`)
+      const response = await fetch(`${API_URL}/api/v1/research/${id}`)
       const data = await response.json()
 
       if (data.success) {
@@ -213,7 +213,7 @@ function App() {
     if (!taskId) return
 
     try {
-      const response = await fetch(`${API_URL}/api/research/${taskId}/export`)
+      const response = await fetch(`${API_URL}/api/v1/research/${taskId}/export`)
       const data = await response.json()
 
       if (data.success) {
