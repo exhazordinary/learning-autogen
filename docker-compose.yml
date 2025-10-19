@@ -73,7 +73,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: autogen-celery-worker
-    command: celery -A src.autogen_research.tasks.celery_app worker --loglevel=info --concurrency=2
+    command: celery -A autogen_research.tasks.celery_app worker --loglevel=info --concurrency=2
     environment:
       - DATABASE_URL=${DATABASE_URL:-postgresql://autogen:autogen_password@postgres:5432/autogen_research}
       - REDIS_URL=redis://redis:6379/0
