@@ -7,9 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@testing-library/react": "^16.3.0",
     "date-fns": "^3.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
