@@ -24,7 +24,9 @@ def test_research_team_creation(mock_config):
     with patch(
         "src.autogen_research.teams.research_team.ModelFactory.create_client"
     ) as mock_factory:
-        mock_factory.return_value = Mock()
+        mock_client = Mock()
+        mock_client.model_info = {"function_calling": True}
+        mock_factory.return_value = mock_client
 
         team = ResearchTeam(config=mock_config)
 
@@ -33,7 +35,8 @@ def test_research_team_creation(mock_config):
         assert team.analyst is not None
         assert team.writer is not None
         assert team.critic is not None
-        assert team.team is not None
+        assert team.config is not None
+        assert team.token_counter is not None
 
 
 def test_research_team_default_config():
@@ -41,7 +44,9 @@ def test_research_team_default_config():
     with patch(
         "src.autogen_research.teams.research_team.ModelFactory.create_client"
     ) as mock_factory:
-        mock_factory.return_value = Mock()
+        mock_client = Mock()
+        mock_client.model_info = {"function_calling": True}
+        mock_factory.return_value = mock_client
 
         team = ResearchTeam()
 
@@ -54,7 +59,9 @@ def test_research_team_has_summary_methods(mock_config):
     with patch(
         "src.autogen_research.teams.research_team.ModelFactory.create_client"
     ) as mock_factory:
-        mock_factory.return_value = Mock()
+        mock_client = Mock()
+        mock_client.model_info = {"function_calling": True}
+        mock_factory.return_value = mock_client
 
         team = ResearchTeam(config=mock_config)
 
@@ -68,7 +75,9 @@ def test_research_team_get_summary(mock_config):
     with patch(
         "src.autogen_research.teams.research_team.ModelFactory.create_client"
     ) as mock_factory:
-        mock_factory.return_value = Mock()
+        mock_client = Mock()
+        mock_client.model_info = {"function_calling": True}
+        mock_factory.return_value = mock_client
 
         team = ResearchTeam(config=mock_config)
         summary = team.get_summary()

@@ -15,15 +15,38 @@ from flask_swagger_ui import get_swaggerui_blueprint
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+from src.autogen_research.auth import (
+    create_access_token,
+    create_user,
+    init_jwt,
+    jwt_required_optional,
+    verify_user,
+)
 from src.autogen_research.database import AgentMessage, ResearchTask, cache_manager, db
 from src.autogen_research.tasks import celery_app, process_research_task
 from src.autogen_research.utils import setup_logger
+from src.autogen_research.utils.observability import (
+    instrument_flask_app,
+    setup_opentelemetry,
+    setup_sentry,
+)
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Setup logging early
 logger = setup_logger("autogen_research", log_file=Path("logs/web_app.log"))
+
+# Setup observability
+logger.info("Initializing observability...")
+sentry_enabled = setup_sentry(environment=os.getenv("FLASK_ENV", "production"))
+otel_enabled = setup_opentelemetry()
+
+if otel_enabled:
+    instrument_flask_app(app)
+
+logger.info(f"Sentry: {'enabled' if sentry_enabled else 'disabled'}")
+logger.info(f"OpenTelemetry: {'enabled' if otel_enabled else 'disabled'}")
 
 # Configuration
 secret_key = os.getenv("SECRET_KEY")
@@ -72,9 +95,21 @@ except Exception as e:
 # Initialize database
 db.init_app(app)
 
+# Initialize JWT
+jwt = init_jwt(app)
+
 # Create tables
 with app.app_context():
     db.create_all()
+
+    # Create a default user for testing (remove in production!)
+    if os.getenv("CREATE_DEFAULT_USER", "false").lower() == "true":
+        username = os.getenv("DEFAULT_USER", "admin")
+        password = os.getenv("DEFAULT_PASSWORD", "changeme")
+        if create_user(username, password):
+            logger.info(f"Created default user: {username}")
+        else:
+            logger.info(f"Default user already exists: {username}")
 
 # Swagger UI configuration
 SWAGGER_URL = "/api/docs"
@@ -89,6 +124,92 @@ app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 def swagger_spec():
     """Serve Swagger specification."""
     return send_from_directory("static", "swagger.json")
+
+
+# Authentication endpoints
+@app.route("/api/v1/auth/register", methods=["POST"])
+def register():
+    """
+    Register a new user.
+
+    Request body:
+    {
+        "username": "user",
+        "password": "password"
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+
+        if len(username) < 3:
+            return jsonify({"error": "Username must be at least 3 characters"}), 400
+
+        if len(password) < 8:
+            return jsonify({"error": "Password must be at least 8 characters"}), 400
+
+        if create_user(username, password):
+            access_token = create_access_token(username)
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "User registered successfully",
+                    "access_token": access_token,
+                    "username": username,
+                }
+            ), 201
+        else:
+            return jsonify({"error": "User already exists"}), 409
+
+    except Exception as e:
+        logger.error(f"Error during registration: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/v1/auth/login", methods=["POST"])
+def login():
+    """
+    Login and get access token.
+
+    Request body:
+    {
+        "username": "user",
+        "password": "password"
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+
+        username = data.get("username", "").strip()
+        password = data.get("password", "")
+
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+
+        if verify_user(username, password):
+            access_token = create_access_token(username)
+            return jsonify(
+                {
+                    "success": True,
+                    "access_token": access_token,
+                    "username": username,
+                }
+            )
+        else:
+            return jsonify({"error": "Invalid credentials"}), 401
+
+    except Exception as e:
+        logger.error(f"Error during login: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.errorhandler(400)
@@ -118,6 +239,7 @@ def internal_error(e):
 
 @app.route("/api/v1/research", methods=["POST"])
 @limiter.limit("100 per minute")
+@jwt_required_optional
 def research_v1():
     """
     Execute a research task asynchronously.
@@ -157,8 +279,9 @@ def research_v1():
                     }
                 )
 
-        # Create database task
-        research_task = ResearchTask(task=task_text, status="pending")
+        # Create database task with optional user_id
+        user_id = getattr(request, "user_id", None)
+        research_task = ResearchTask(task=task_text, status="pending", user_id=user_id)
         db.session.add(research_task)
         db.session.commit()
 

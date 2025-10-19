@@ -27,6 +27,7 @@ class BaseAgent:
         model_client: OpenAIChatCompletionClient,
         metrics_collector: MetricsCollector | None = None,
         metadata: dict[str, Any] | None = None,
+        tools: list | None = None,
     ):
         """
         Initialize base agent.
@@ -38,6 +39,7 @@ class BaseAgent:
             model_client: Model client for LLM interactions
             metrics_collector: Optional metrics collector
             metadata: Optional metadata for the agent
+            tools: Optional list of tools for the agent
         """
         self.name = name
         self.description = description
@@ -45,6 +47,7 @@ class BaseAgent:
         self.model_client = model_client
         self.metrics_collector = metrics_collector
         self.metadata = metadata or {}
+        self.tools = tools
 
         # Create the underlying AutoGen agent
         self.agent = AssistantAgent(
@@ -52,6 +55,7 @@ class BaseAgent:
             description=description,
             system_message=system_message,
             model_client=model_client,
+            tools=tools,
         )
 
         logger.info(f"Initialized agent: {name}")
